@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	log  "github.com/sirupsen/logrus"
 	"math/rand"
 	"net/http"
@@ -52,9 +51,16 @@ var (
 )
 
 func init() {
-	flag.IntVar(&workers, "workers", 10, "Number of workers to use")
-	flag.IntVar(&jobSleepTime, "max-job-sleep", 150, "Job maximum sleep time in miliseconds")
-	flag.IntVar(&jobs, "jobs", 10000, "Jobs queue")
+	workers = getEnv("WORKERS", 10)
+	jobSleepTime = getEnv("MAX_JOB_SLEEP_TIME", 150)
+	jobs = getEnv("JOBS", 10000)
+}
+func getEnv(key string, fallback int) int {
+	if value, ok := os.LookupEnv(key); ok {
+		val, _ := strconv.Atoi(value)
+		return val
+	}
+	return fallback
 }
 
 func getType() string {
@@ -63,8 +69,6 @@ func getType() string {
 
 // main entry point for the application
 func main() {
-	// parse the flags
-	flag.Parse()
 
 	//////////
 	// Demo of Worker Processing
@@ -87,6 +91,10 @@ func main() {
 
 	handler := http.NewServeMux()
 	handler.Handle("/metrics", promhttp.Handler())
+	handler.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("OK"))
+		w.WriteHeader(200)
+	})
 
 	log.Info("Starting HTTP server on port :8080")
 	log.Fatal(http.ListenAndServe(":8080", handler))

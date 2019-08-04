@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: go-metrics
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: go-metrics
+  template:
+    spec:
+      containers:
+        - name: go-metrics
+          image: mjasion/go-metrics
+          imagePullPolicy: Always
+          env:
+            - name: WORKERS
+              value: "1"
+            - name: JOBS
+              value: "10000"
+            - name: MAX_JOB_SLEEP_TIME
+              value: "2000"
+          ports:
+            - containerPort: 8080
+          livenessProbe:
+            exec:
+              command:
+                - curl
+                - -f
+                - http://localhost:8080/health
+          readinessProbe:
+            exec:
+              command:
+                - curl
+                - -f
+                - http://localhost:8080/health
+    metadata:
+      labels:
+        app: go-metrics
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: go-metrics
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+  selector:
+    app: go-metrics
