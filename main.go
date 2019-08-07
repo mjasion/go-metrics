@@ -1,7 +1,7 @@
 package main
 
 import (
-	log  "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"math/rand"
 	"net/http"
 	"os"
@@ -14,10 +14,10 @@ import (
 )
 
 var (
-	types   = []string{"email", "deactivation", "activation", "transaction", "customer_renew", "order_processed"}
-	workers = 0
+	types        = []string{"email", "deactivation", "activation", "transaction", "customer_renew", "order_processed"}
+	workers      = 0
 	jobSleepTime = 0
-	jobs = 0
+	jobs         = 0
 
 	totalCounterVec = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -95,6 +95,10 @@ func main() {
 		w.Write([]byte("OK"))
 		w.WriteHeader(200)
 	})
+	handler.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("OK"))
+		w.WriteHeader(200)
+	})
 
 	log.Info("Starting HTTP server on port :8080")
 	log.Fatal(http.ListenAndServe(":8080", handler))
@@ -156,8 +160,8 @@ func startWorker(workerID int, jobs <-chan *Job) {
 			time.Sleep(job.Sleep)
 			log.WithFields(log.Fields{
 				"worker_id": workerID,
-				"job_type": job.Type,
-				"duration": time.Now().Sub(startTime).Seconds(),
+				"job_type":  job.Type,
+				"duration":  time.Now().Sub(startTime).Seconds(),
 			}).Info("Processed job")
 			// track the total number of jobs processed by the worker
 			totalCounterVec.WithLabelValues(strconv.FormatInt(int64(workerID), 10), job.Type).Inc()
@@ -168,7 +172,6 @@ func startWorker(workerID int, jobs <-chan *Job) {
 		}
 	}
 }
-
 
 func init() {
 	// Log as JSON instead of the default ASCII formatter.
